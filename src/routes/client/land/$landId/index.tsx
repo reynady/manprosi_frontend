@@ -1,0 +1,505 @@
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { API_URL } from '@/constants'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { Eye, Pencil, Trash } from 'lucide-react'
+import { useState } from 'react'
+import Header from '@/components/Header'
+import NotificationCenter from '@/components/NotificationCenter'
+import BackButton from '@/components/BackButton'
+import Card from '@/components/ui/Card'
+import fetchJson from '@/lib/safeFetch'
+
+export const Route = createFileRoute('/client/land/$landId/')({
+  component: RouteComponent,
+})
+
+// --- API Functions ---
+async function getLandById(id: string) {
+    const json = await fetchJson(`${API_URL}/lands/${id}`)
+    return json?.data ?? null
+}
+
+async function deleteLand(id: number) {
+    await fetchJson(`${API_URL}/lands/${id}`, { method: 'DELETE' })
+    return true
+}
+
+async function getLandSensors(landId: string) {
+    const json = await fetchJson(`${API_URL}/lands/${landId}/sensors`)
+    return json?.data ?? []
+}
+
+async function getLatestSensorValue(sensorId: number) {
+    try {
+        const json = await fetchJson(`${API_URL}/sensors/${sensorId}/latest`)
+        return json?.data ?? null
+    } catch (err) {
+        return null
+    }
+}
+
+async function deleteSensor(id: number) {
+    await fetchJson(`${API_URL}/sensors/${id}`, { method: 'DELETE' })
+    return true
+}
+
+async function getLandPlants(landId: string) {
+    const json = await fetchJson(`${API_URL}/lands/${landId}/plants`)
+    return json?.data ?? []
+}
+
+async function deletePlant(id: number) {
+    await fetchJson(`${API_URL}/plants/${id}`, { method: 'DELETE' })
+    return true
+}
+
+async function getLandValves(landId: string) {
+    const json = await fetchJson(`${API_URL}/lands/${landId}/valves`)
+    return json?.data ?? []
+}
+
+async function deleteValve(id: number) {
+    await fetchJson(`${API_URL}/valves/${id}`, { method: 'DELETE' })
+    return true
+}
+
+async function getLandPumps(landId: string) {
+    const json = await fetchJson(`${API_URL}/lands/${landId}/pumps`)
+    return json?.data ?? []
+}
+
+async function deletePump(id: number) {
+    await fetchJson(`${API_URL}/pumps/${id}`, { method: 'DELETE' })
+    return true
+}
+
+async function getLandAutomations(landId: string) {
+    const json = await fetchJson(`${API_URL}/lands/${landId}/automations`)
+    return json?.data ?? []
+}
+
+async function deleteAutomation(id: number) {
+    await fetchJson(`${API_URL}/automations/${id}`, { method: 'DELETE' })
+    return true
+}
+
+// --- PEST CONTROL API (BARU) ---
+async function getLandPestControls(landId: string) {
+    const json = await fetchJson(`${API_URL}/lands/${landId}/pest-controls`)
+    return json?.data ?? []
+}
+
+async function deletePestControl(id: number) {
+    await fetchJson(`${API_URL}/pest-controls/${id}`, { method: 'DELETE' })
+    return true
+}
+
+// Tambahan: Fetch Seeds untuk lookup nama
+async function getSeeds() { const json = await fetchJson(`${API_URL}/seeds`); return json?.data ?? [] }
+
+// --- Components ---
+
+function SensorRow({ sensor, navigate, onDelete }: { sensor: any, navigate: any, onDelete: (id: number) => void }) {
+  const { data: latestHistory, isLoading } = useQuery({ queryKey: ["sensor-latest", sensor.id], queryFn: () => getLatestSensorValue(sensor.id), retry: false });
+  return (
+    <tr className="hover:bg-gray-50 transition-colors">
+        <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm font-medium text-gray-900">{sensor.name}</div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+            <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                {sensor.sensor_type}
+            </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-700">
+                {isLoading ? "Loading..." : latestHistory ? `${latestHistory.value} ${sensor.unit}` : <span className="text-gray-400 italic">No data</span>}
+            </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <div className="flex items-center justify-end gap-2">
+                <button onClick={() => navigate({ to: `/client/land/${sensor.land_id}/sensor/${sensor.id}` })} className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Detail"><Eye size={18} /></button>
+                <button onClick={() => navigate({ to: `/client/land/${sensor.land_id}/sensor/${sensor.id}/update` })} className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors" title="Edit"><Pencil size={18} /></button>
+                <button className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" onClick={() => { if (confirm(`Delete sensor ${sensor.name}?`)) onDelete(sensor.id); }} title="Delete"><Trash size={18} /></button>
+            </div>
+        </td>
+    </tr>
+  );
+}
+
+function PlantRow({ plant, seeds, navigate, onDelete }: { plant: any, seeds: any[], navigate: any, onDelete: (id: number) => void }) {
+    const seedName = seeds?.find((s: any) => s.id === plant.seed_id)?.name || `ID: ${plant.seed_id}`;
+    return (
+      <tr className="hover:bg-gray-50 transition-colors">
+          <td className="px-6 py-4 whitespace-nowrap">
+              <div className="text-sm font-medium text-gray-900">{plant.name}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+              <div className="text-sm text-gray-700">{plant.quantity}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+              <div className="text-sm text-gray-700">{seedName}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+              <div className="text-sm text-gray-700">{plant.planted_at ? new Date(plant.planted_at).toLocaleDateString() : '-'}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => navigate({ to: `/client/land/${plant.land_id}/plant/${plant.id}` })} className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Detail"><Eye size={18} /></button>
+                  <button onClick={() => navigate({ to: `/client/land/${plant.land_id}/plant/${plant.id}/update` })} className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors" title="Edit"><Pencil size={18} /></button>
+                  <button className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" onClick={() => { if (confirm(`Delete plant ${plant.name}?`)) onDelete(plant.id); }} title="Delete"><Trash size={18} /></button>
+              </div>
+          </td>
+      </tr>
+    );
+}
+
+function ValveRow({ valve, navigate, onDelete }: { valve: any, navigate: any, onDelete: (id: number) => void }) {
+    return (
+      <tr className="hover:bg-gray-50 transition-colors">
+          <td className="px-6 py-4 whitespace-nowrap">
+              <div className="text-sm font-medium text-gray-900">{valve.name}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => navigate({ to: `/client/land/${valve.land_id}/valve/${valve.id}` })} className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Detail"><Eye size={18} /></button>
+                  <button onClick={() => navigate({ to: `/client/land/${valve.land_id}/valve/${valve.id}/update` })} className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors" title="Edit"><Pencil size={18} /></button>
+                  <button className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" onClick={() => { if (confirm(`Delete valve ${valve.name}?`)) onDelete(valve.id); }} title="Delete"><Trash size={18} /></button>
+              </div>
+          </td>
+      </tr>
+    );
+}
+
+function PumpRow({ pump, navigate, onDelete }: { pump: any, navigate: any, onDelete: (id: number) => void }) {
+    return (
+      <tr className="hover:bg-gray-50 transition-colors">
+          <td className="px-6 py-4 whitespace-nowrap">
+              <div className="text-sm font-medium text-gray-900">{pump.name}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div className="flex items-center justify-end gap-2">
+                  <button onClick={() => navigate({ to: `/client/land/${pump.land_id}/pump/${pump.id}` })} className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Detail"><Eye size={18} /></button>
+                  <button onClick={() => navigate({ to: `/client/land/${pump.land_id}/pump/${pump.id}/update` })} className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors" title="Edit"><Pencil size={18} /></button>
+                  <button className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" onClick={() => { if (confirm(`Delete pump ${pump.name}?`)) onDelete(pump.id); }} title="Delete"><Trash size={18} /></button>
+              </div>
+          </td>
+      </tr>
+    );
+}
+
+function AutomationRow({ auto, sensors, pumps, valves, navigate, onDelete }: { auto: any, sensors: any[], pumps: any[], valves: any[], navigate: any, onDelete: (id: number) => void }) {
+    const sensorName = sensors?.find(s => s.id === auto.sensor_id)?.name || `Sensor ${auto.sensor_id}`;
+    const pumpName = pumps?.find(p => p.id === auto.pump_id)?.name || `Pump ${auto.pump_id}`;
+    const valveName = valves?.find(v => v.id === auto.valve_id)?.name || `Valve ${auto.valve_id}`;
+
+    return (
+      <tr className="border-b border-gray-300 hover:bg-gray-50 transition-colors">
+          <td className="p-2.5 text-gray-900 whitespace-nowrap">{auto.name}</td>
+          <td className="p-2.5 text-gray-700 whitespace-nowrap">
+            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                auto.automation_type === 'Watering' ? 'bg-blue-100 text-blue-800' :
+                auto.automation_type === 'Fertilization' ? 'bg-green-100 text-green-800' :
+                'bg-orange-100 text-orange-800'
+            }`}>
+                {auto.automation_type}
+            </span>
+          </td>
+          <td className="p-2.5 text-gray-700 whitespace-nowrap">{sensorName} &gt; {auto.sensor_value}</td>
+          <td className="p-2.5 text-gray-700 whitespace-nowrap">
+              <span className="block">{pumpName} <span className="font-bold ml-1">({auto.dispense_amount} L)</span></span>
+              <span className="block">{valveName}</span>
+          </td>
+          <td className="p-2.5 whitespace-nowrap">
+              <div className="flex items-center gap-1">
+                  <button onClick={() => navigate({ to: `/client/land/${auto.land_id}/automation/${auto.id}` })} className="p-1 hover:[&_svg]:stroke-[2.5]" title="Detail"><Eye size={18} /></button>
+                  <button onClick={() => navigate({ to: `/client/land/${auto.land_id}/automation/${auto.id}/update` })} className="p-1 hover:[&_svg]:stroke-[2.5]" title="Edit"><Pencil size={18} /></button>
+                  <button className="p-1 text-red-500 hover:text-red-700" onClick={() => { if (confirm(`Delete?`)) onDelete(auto.id); }} title="Delete"><Trash size={18} /></button>
+              </div>
+          </td>
+          <td></td><td></td>
+      </tr>
+    );
+}
+
+// --- COMPONENT BARU: Pest Control Row ---
+function PestControlRow({ pest, navigate, onDelete }: { pest: any, navigate: any, onDelete: (id: number) => void }) {
+    // Tentukan warna status
+    const statusColors = {
+        'done': 'bg-green-100 text-green-800',
+        'wip': 'bg-yellow-100 text-yellow-800',
+        'no_action': 'bg-gray-100 text-gray-800'
+    };
+    // @ts-ignore
+    const badgeClass = statusColors[pest.status] || 'bg-gray-100 text-gray-800';
+
+    return (
+      <tr className="border-b border-gray-300 hover:bg-gray-50 transition-colors">
+          <td className="p-2.5 text-gray-900 whitespace-nowrap">{pest.name}</td>
+          <td className="p-2.5 whitespace-nowrap">
+              <span className={`px-2 py-1 rounded text-xs font-semibold uppercase ${badgeClass}`}>
+                  {pest.status.replace('_', ' ')}
+              </span>
+          </td>
+          <td className="p-2.5 whitespace-nowrap">
+              <div className="flex items-center gap-1">
+                  <button onClick={() => navigate({ to: `/client/land/${pest.land_id}/pest-control/${pest.id}` })} className="p-1 hover:[&_svg]:stroke-[2.5]" title="Detail"><Eye size={18} /></button>
+                  <button onClick={() => navigate({ to: `/client/land/${pest.land_id}/pest-control/${pest.id}/update` })} className="p-1 hover:[&_svg]:stroke-[2.5]" title="Edit"><Pencil size={18} /></button>
+                  <button className="p-1 text-red-500 hover:text-red-700" onClick={() => { if (confirm(`Delete task ${pest.name}?`)) onDelete(pest.id); }} title="Delete"><Trash size={18} /></button>
+              </div>
+          </td>
+          <td></td><td></td>
+      </tr>
+    );
+}
+  
+function RouteComponent() {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const user = useAuthStore((s) => s.user);
+    const { landId } = Route.useParams();
+    
+    // Tambah 'pest-control' ke tipe tab
+    const [activeTab, setActiveTab] = useState<'sensors' | 'plants' | 'valves' | 'pumps' | 'automations' | 'pest-control'>('sensors');
+    
+    const tabs = [
+        { id: 'sensors', label: 'Sensors' },
+        { id: 'plants', label: 'Plants' },
+        { id: 'valves', label: 'Valves' },
+        { id: 'pumps', label: 'Pumps' },
+        { id: 'automations', label: 'Automations' },
+        { id: 'pest-control', label: 'Pest Control' }, // Tab Baru
+    ];
+  
+    // Fetch Data
+    const { data: land, isLoading: isLoadingLand } = useQuery({ queryKey: ["land", landId], queryFn: () => getLandById(landId) });
+    const { data: sensors, isLoading: isLoadingSensors } = useQuery({ queryKey: ["land-sensors", landId], queryFn: () => getLandSensors(landId) });
+    const { data: plants, isLoading: isLoadingPlants } = useQuery({ queryKey: ["land-plants", landId], queryFn: () => getLandPlants(landId) });
+    const { data: valves, isLoading: isLoadingValves } = useQuery({ queryKey: ["land-valves", landId], queryFn: () => getLandValves(landId) });
+    const { data: pumps, isLoading: isLoadingPumps } = useQuery({ queryKey: ["land-pumps", landId], queryFn: () => getLandPumps(landId) });
+    const { data: automations, isLoading: isLoadingAutomations } = useQuery({ queryKey: ["land-automations", landId], queryFn: () => getLandAutomations(landId) });
+    
+    // Query Baru: Pest Controls
+    const { data: pests, isLoading: isLoadingPests } = useQuery({ queryKey: ["land-pests", landId], queryFn: () => getLandPestControls(landId) });
+    
+    const { data: seeds } = useQuery({ queryKey: ["seeds"], queryFn: getSeeds });
+
+    // Mutations
+    const deleteLandMutation = useMutation({ mutationFn: deleteLand, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["lands", user?.id] }); navigate({ to: '/client' }); } });
+    const deleteSensorMutation = useMutation({ mutationFn: deleteSensor, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["land-sensors", landId] }) });
+    const deletePlantMutation = useMutation({ mutationFn: deletePlant, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["land-plants", landId] }) });
+    const deleteValveMutation = useMutation({ mutationFn: deleteValve, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["land-valves", landId] }) });
+    const deletePumpMutation = useMutation({ mutationFn: deletePump, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["land-pumps", landId] }) });
+    const deleteAutomationMutation = useMutation({ mutationFn: deleteAutomation, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["land-automations", landId] }) });
+    
+    // Mutation Baru: Delete Pest Control
+    const deletePestMutation = useMutation({ mutationFn: deletePestControl, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["land-pests", landId] }) });
+
+  
+    if (isLoadingLand) return <p className="p-5">Loading land details...</p>;
+    
+    // Handlers
+    const handleDeleteSensor = (id: number) => deleteSensorMutation.mutate(id);
+    const handleDeletePlant = (id: number) => deletePlantMutation.mutate(id);
+    const handleDeleteValve = (id: number) => deleteValveMutation.mutate(id);
+    const handleDeletePump = (id: number) => deletePumpMutation.mutate(id);
+    const handleDeleteAutomation = (id: number) => deleteAutomationMutation.mutate(id);
+    const handleDeletePest = (id: number) => deletePestMutation.mutate(id); // Handler Baru
+    
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case 'sensors':
+                return (
+                    <div>
+                        {isLoadingSensors && (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                                <span className="ml-3 text-gray-600">Loading...</span>
+                            </div>
+                        )}
+                        {!isLoadingSensors && sensors && sensors.length > 0 ? (
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Name</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Type</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Latest Value</th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {sensors.map((s: any) => <SensorRow key={s.id} sensor={s} navigate={navigate} onDelete={handleDeleteSensor} />)}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : !isLoadingSensors && <div className="text-center py-12 bg-white rounded-lg border border-gray-200"><p className="text-gray-500">No sensors installed.</p></div>}
+                    </div>
+                );
+            case 'plants':
+                return (
+                    <div className="mt-5">
+                        {isLoadingPlants && <p>Loading...</p>}
+                        {plants && plants.length > 0 ? (
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-100 text-left border border-gray-300">
+                                        <th className="p-2.5 font-normal">Name</th>
+                                        <th className="p-2.5 font-normal">Quantity</th>
+                                        <th className="p-2.5 font-normal">Seed Source</th>
+                                        <th className="p-2.5 font-normal">Planted At</th>
+                                        <th className="p-2.5 font-normal">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>{plants.map((p: any) => <PlantRow key={p.id} plant={p} seeds={seeds || []} navigate={navigate} onDelete={handleDeletePlant} />)}</tbody>
+                            </table>
+                        ) : <p className="text-gray-500">No plants recorded.</p>}
+                    </div>
+                );
+            case 'valves':
+                return (
+                    <div className="mt-5">
+                        {isLoadingValves && <p>Loading...</p>}
+                        {valves && valves.length > 0 ? (
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-100 text-left border border-gray-300">
+                                        <th className="p-2.5 font-normal">Name</th><th className="p-2.5 font-normal">Actions</th><th className="text-transparent">p</th><th className="text-transparent">p</th>
+                                    </tr>
+                                </thead>
+                                <tbody>{valves.map((v: any) => <ValveRow key={v.id} valve={v} navigate={navigate} onDelete={handleDeleteValve} />)}</tbody>
+                            </table>
+                        ) : <p className="text-gray-500">No valves installed.</p>}
+                    </div>
+                );
+            case 'pumps':
+                return (
+                    <div className="mt-5">
+                        {isLoadingPumps && <p>Loading...</p>}
+                        {pumps && pumps.length > 0 ? (
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-100 text-left border border-gray-300">
+                                        <th className="p-2.5 font-normal">Name</th><th className="p-2.5 font-normal">Actions</th><th className="text-transparent">p</th><th className="text-transparent">p</th>
+                                    </tr>
+                                </thead>
+                                <tbody>{pumps.map((p: any) => <PumpRow key={p.id} pump={p} navigate={navigate} onDelete={handleDeletePump} />)}</tbody>
+                            </table>
+                        ) : <p className="text-gray-500">No pumps installed.</p>}
+                    </div>
+                );
+            case 'automations':
+                return (
+                    <div className="mt-5">
+                        {isLoadingAutomations && <p>Loading...</p>}
+                        {automations && automations.length > 0 ? (
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-100 text-left border border-gray-300">
+                                        <th className="p-2.5 font-normal">Name</th>
+                                        <th className="p-2.5 font-normal">Type</th>
+                                        <th className="p-2.5 font-normal">Trigger</th>
+                                        <th className="p-2.5 font-normal">Action</th>
+                                        <th className="p-2.5 font-normal">Actions</th>
+                                        <th className="text-transparent">p</th><th className="text-transparent">p</th>
+                                    </tr>
+                                </thead>
+                                <tbody>{automations.map((a: any) => <AutomationRow key={a.id} auto={a} sensors={sensors || []} pumps={pumps || []} valves={valves || []} navigate={navigate} onDelete={handleDeleteAutomation} />)}</tbody>
+                            </table>
+                        ) : <p className="text-gray-500">No automations configured.</p>}
+                    </div>
+                );
+            
+            // CASE BARU: Pest Control
+            case 'pest-control':
+                return (
+                    <div className="mt-5">
+                        {isLoadingPests && <p>Loading...</p>}
+                        {pests && pests.length > 0 ? (
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-100 text-left border border-gray-300">
+                                        <th className="p-2.5 font-normal">Task Name</th>
+                                        <th className="p-2.5 font-normal">Status</th>
+                                        <th className="p-2.5 font-normal">Actions</th>
+                                        <th className="text-transparent">p</th><th className="text-transparent">p</th>
+                                    </tr>
+                                </thead>
+                                <tbody>{pests.map((p: any) => <PestControlRow key={p.id} pest={p} navigate={navigate} onDelete={handleDeletePest} />)}</tbody>
+                            </table>
+                        ) : <p className="text-gray-500">No pest control tasks recorded.</p>}
+                    </div>
+                );
+
+            default: return null;
+        }
+    };
+  
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <NotificationCenter />
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900">{land ? `View Land: ${land.location_name}` : 'View Land'}</h2>
+                            {land && <p className="text-sm text-gray-600 mt-1">{land.location_name} • {land.size} Hectares</p>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <BackButton to="/client" />
+                            <button
+                                onClick={() => navigate({ to: `/client/land/${landId}/update` })}
+                                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"
+                            >
+                                Update
+                            </button>
+                            <button
+                                onClick={() => { if (land && confirm(`Delete ${land.location_name}?`)) deleteLandMutation.mutate(Number(land.id)); }}
+                                disabled={deleteLandMutation.isPending}
+                                className="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors font-medium"
+                            >
+                                {deleteLandMutation.isPending ? "Deleting..." : "Delete"}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-4">
+                        <nav aria-label="Tabs" className="flex space-x-2 overflow-x-auto">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as any)}
+                                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                                        activeTab === tab.id ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </nav>
+                        <button
+                            onClick={() => {
+                                if (activeTab === 'sensors') navigate({ to: `/client/land/${landId}/sensor/create` });
+                                else if (activeTab === 'plants') navigate({ to: `/client/land/${landId}/plant/create` });
+                                else if (activeTab === 'valves') navigate({ to: `/client/land/${landId}/valve/create` });
+                                else if (activeTab === 'pumps') navigate({ to: `/client/land/${landId}/pump/create` });
+                                else if (activeTab === 'automations') navigate({ to: `/client/land/${landId}/automation/create` });
+                                else if (activeTab === 'pest-control') navigate({ to: `/client/land/${landId}/pest-control/create` });
+                            }}
+                            className="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all font-medium shadow-sm whitespace-nowrap"
+                        >
+                            + Create
+                        </button>
+                    </div>
+
+                    <Card>
+                        {renderTabContent()}
+                    </Card>
+                </div>
+            </div>
+    );
+  }
