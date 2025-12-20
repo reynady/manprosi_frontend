@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { Pencil, Trash, LogOut } from 'lucide-react';
 import Header from '@/components/Header'
 import NotificationCenter from '@/components/NotificationCenter'
-import Card from '@/components/ui/Card'
 import fetchJson from '@/lib/safeFetch'
 
 export const Route = createFileRoute('/admin/')({

@@ -1,4 +1,3 @@
-import React from 'react'
 import { useNotificationStore } from '@/stores/useNotificationStore'
 
 export default function NotificationCenter() {

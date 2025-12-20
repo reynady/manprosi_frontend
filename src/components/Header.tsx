@@ -1,7 +1,4 @@
-import React from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { useMutation } from '@tanstack/react-query'
-import { API_URL } from '@/constants'
 import { useNavigate } from '@tanstack/react-router'
 import { Bell } from 'lucide-react'
 
