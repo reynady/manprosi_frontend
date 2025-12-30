@@ -15,5 +15,8 @@ type AuthStore = {
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   setUser: (user) => set({ user }),
-  clearUser: () => set({ user: null }),
+  clearUser: () => {
+    localStorage.removeItem('token');
+    set({ user: null });
+  },
 }));
