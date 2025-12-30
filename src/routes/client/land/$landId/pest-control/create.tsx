@@ -12,6 +12,7 @@ export const Route = createFileRoute('/client/land/$landId/pest-control/create')
   component: RouteComponent,
 })
 
+// --- Helper Functions (use safe fetchJson)
 async function createPestControlRequest(payload: { name: string, status: string, land_id: number }) {
   const json = await fetchJson(`${API_URL}/pest-controls`, {
     method: 'POST',

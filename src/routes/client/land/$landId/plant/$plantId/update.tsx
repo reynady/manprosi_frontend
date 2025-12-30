@@ -15,42 +15,30 @@ export const Route = createFileRoute(
 
 // --- API Helpers ---
 
+import fetchJson from '@/lib/safeFetch'
+
 async function getPlantById(id: string) {
-  const res = await fetch(`${API_URL}/plants/${id}`, {
-    credentials: "include",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data.error || "Failed to fetch plant");
-  }
-
-  return data.data;
+  const json = await fetchJson(`${API_URL}/plants/${id}`);
+  return json?.data;
 }
 
 async function getSeeds() {
-  const res = await fetch(`${API_URL}/seeds`, { credentials: "include" });
-  const data = await res.json();
-  if (!res.ok) throw new Error("Failed");
-  return data.data;
+  const json = await fetchJson(`${API_URL}/seeds`);
+  return json?.data;
 }
 
 async function updatePlantRequest(payload: { id: string; name: string; quantity: number; seed_id: number; planted_at: string; }) {
-  const res = await fetch(`${API_URL}/plants/${payload.id}`, {
+  const json = await fetchJson(`${API_URL}/plants/${payload.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ 
-        name: payload.name, 
-        quantity: payload.quantity, 
-        seed_id: payload.seed_id,
-        planted_at: payload.planted_at 
+    body: JSON.stringify({
+      name: payload.name,
+      quantity: payload.quantity,
+      seed_id: payload.seed_id,
+      planted_at: payload.planted_at
     }),
   });
-  const data = await res.json();
-  if (!res.ok || !data.success) throw new Error(data.error);
-  return data.data;
+  return json?.data;
 }
 
 function RouteComponent() {
@@ -62,16 +50,16 @@ function RouteComponent() {
   const [quantity, setQuantity] = useState("");
   const [seedId, setSeedId] = useState("");
   const [plantedAt, setPlantedAt] = useState("");
-  
+
   // PERBAIKAN DISINI: Tambahkan isLoading, isError, error
-  const { 
-    data: plant, 
-    isLoading, 
-    isError, 
-    error 
-  } = useQuery({ 
-    queryKey: ["plant", plantId], 
-    queryFn: () => getPlantById(plantId) 
+  const {
+    data: plant,
+    isLoading,
+    isError,
+    error
+  } = useQuery({
+    queryKey: ["plant", plantId],
+    queryFn: () => getPlantById(plantId)
   });
 
   const { data: seeds } = useQuery({ queryKey: ["seeds"], queryFn: getSeeds });

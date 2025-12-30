@@ -13,42 +13,20 @@ export const Route = createFileRoute(
   component: RouteComponent,
 })
 
+import fetchJson from '@/lib/safeFetch'
+
 async function getSensorById(id: string) {
-  const res = await fetch(`${API_URL}/sensors/${id}`, {
-    credentials: "include",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data.error || "Failed to fetch sensor");
-  }
-
-  return data.data;
+  const json = await fetchJson(`${API_URL}/sensors/${id}`);
+  return json?.data;
 }
 
-async function updateSensorRequest(payload: {
-  id: string;
-  name: string;
-  sensor_type: string;
-}) {
-  const res = await fetch(`${API_URL}/sensors/${payload.id}`, {
+async function updateSensorRequest(payload: { id: string; name: string; sensor_type: string; }) {
+  const json = await fetchJson(`${API_URL}/sensors/${payload.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({
-      name: payload.name,
-      sensor_type: payload.sensor_type,
-    }),
+    body: JSON.stringify({ name: payload.name, sensor_type: payload.sensor_type }),
   });
-
-  const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data.error || "Failed to update sensor");
-  }
-
-  return data.data;
+  return json?.data;
 }
 
 function RouteComponent() {
@@ -58,7 +36,7 @@ function RouteComponent() {
 
   const [name, setName] = useState("");
   const [sensorType, setSensorType] = useState("");
-  
+
   const { data: sensor, isLoading, isError, error } = useQuery({
     queryKey: ["sensor", sensorId],
     queryFn: () => getSensorById(sensorId),
@@ -77,7 +55,7 @@ function RouteComponent() {
       // Invalidate query untuk sensor spesifik dan list sensor di land tersebut
       queryClient.invalidateQueries({ queryKey: ["land-sensors", data.land_id] });
       queryClient.invalidateQueries({ queryKey: ["sensor", sensorId] });
-      
+
       // Navigate kembali ke detail land
       navigate({ to: `/client/land/${data.land_id}` });
     },

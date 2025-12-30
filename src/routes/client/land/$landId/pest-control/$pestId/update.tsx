@@ -8,23 +8,20 @@ export const Route = createFileRoute('/client/land/$landId/pest-control/$pestId/
   component: RouteComponent,
 })
 
+import fetchJson from '@/lib/safeFetch'
+
 async function getPestById(id: string) {
-  const res = await fetch(`${API_URL}/pest-controls/${id}`, { credentials: "include" });
-  const data = await res.json();
-  if (!res.ok || !data.success) throw new Error(data.error);
-  return data.data;
+  const json = await fetchJson(`${API_URL}/pest-controls/${id}`);
+  return json?.data;
 }
 
 async function updatePestRequest(payload: { id: string; name: string; status: string }) {
-  const res = await fetch(`${API_URL}/pest-controls/${payload.id}`, {
+  const json = await fetchJson(`${API_URL}/pest-controls/${payload.id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({ name: payload.name, status: payload.status }),
   });
-  const data = await res.json();
-  if (!res.ok || !data.success) throw new Error(data.error);
-  return data.data;
+  return json?.data;
 }
 
 function RouteComponent() {
@@ -35,9 +32,9 @@ function RouteComponent() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
 
-  const { data: pest, isLoading, isError, error } = useQuery({ 
-    queryKey: ["pest", pestId], 
-    queryFn: () => getPestById(pestId) 
+  const { data: pest, isLoading, isError, error } = useQuery({
+    queryKey: ["pest", pestId],
+    queryFn: () => getPestById(pestId)
   });
 
   useEffect(() => {
@@ -67,14 +64,14 @@ function RouteComponent() {
 
   return (
     <div>
-       <div className="flex justify-between px-5 border-b border-gray-300">
-          <h1 className='py-3'>Edit Pest Control Task</h1>
-          <div className='space-x-2'>
-            <button type="submit" form="edit-pest-form" disabled={mutation.isPending} className="w-[80px] mt-1 h-[40px] border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50">{mutation.isPending ? "..." : "Update"}</button>
-            <BackButton to={`/client/land/${landId}/pest-control/${pestId}`} className="w-[80px] mt-1 h-[40px]" />
-          </div>
+      <div className="flex justify-between px-5 border-b border-gray-300">
+        <h1 className='py-3'>Edit Pest Control Task</h1>
+        <div className='space-x-2'>
+          <button type="submit" form="edit-pest-form" disabled={mutation.isPending} className="w-[80px] mt-1 h-[40px] border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50">{mutation.isPending ? "..." : "Update"}</button>
+          <BackButton to={`/client/land/${landId}/pest-control/${pestId}`} className="w-[80px] mt-1 h-[40px]" />
         </div>
-      
+      </div>
+
       <div className="p-5">
         <form id="edit-pest-form" onSubmit={handleSubmit} className="space-y-4 max-w-lg">
           <div className="flex flex-col gap-1">
@@ -85,9 +82,9 @@ function RouteComponent() {
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Status</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="border border-gray-300 rounded p-2 bg-white">
-                <option value="no_action">No Action</option>
-                <option value="wip">Work In Progress</option>
-                <option value="done">Done</option>
+              <option value="no_action">No Action</option>
+              <option value="wip">Work In Progress</option>
+              <option value="done">Done</option>
             </select>
           </div>
           {mutation.isError && <p className="text-red-500 text-sm">{(mutation.error as Error).message}</p>}

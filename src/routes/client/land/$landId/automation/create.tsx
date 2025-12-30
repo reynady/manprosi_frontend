@@ -14,30 +14,11 @@ export const Route = createFileRoute('/client/land/$landId/automation/create')({
 })
 
 // --- Helper Functions (use safe fetchJson)
-async function getLandSensors(landId: string) {
-  const json = await fetchJson(`${API_URL}/lands/${landId}/sensors`)
-  return json?.data ?? []
-}
-
-async function getLandPumps(landId: string) {
-  const json = await fetchJson(`${API_URL}/lands/${landId}/pumps`)
-  return json?.data ?? []
-}
-
-async function getLandValves(landId: string) {
-  const json = await fetchJson(`${API_URL}/lands/${landId}/valves`)
-  return json?.data ?? []
-}
-
-async function getRecommendations() {
-  const json = await fetchJson(`${API_URL}/recommendations`)
-  return json?.data ?? []
-}
-
-async function getSeeds() {
-  const json = await fetchJson(`${API_URL}/seeds`)
-  return json?.data ?? []
-}
+async function getLandSensors(landId: string) { const json = await fetchJson(`${API_URL}/lands/${landId}/sensors`); return json?.data ?? [] }
+async function getLandPumps(landId: string) { const json = await fetchJson(`${API_URL}/lands/${landId}/pumps`); return json?.data ?? [] }
+async function getLandValves(landId: string) { const json = await fetchJson(`${API_URL}/lands/${landId}/valves`); return json?.data ?? [] }
+async function getRecommendations() { const json = await fetchJson(`${API_URL}/recommendations`); return json?.data ?? [] }
+async function getSeeds() { const json = await fetchJson(`${API_URL}/seeds`); return json?.data ?? [] }
 
 async function createAutomationRequest(payload: any) {
   const json = await fetchJson(`${API_URL}/automations`, {
@@ -62,21 +43,21 @@ function RouteComponent() {
   const [error, setError] = useState("");
 
   // State Filter Rekomendasi (Kanan)
-  const [selectedSeedFilter, setSelectedSeedFilter] = useState(""); 
+  const [selectedSeedFilter, setSelectedSeedFilter] = useState("");
 
   // Queries
   const { data: sensors } = useQuery({ queryKey: ["land-sensors", landId], queryFn: () => getLandSensors(landId) });
   const { data: pumps } = useQuery({ queryKey: ["land-pumps", landId], queryFn: () => getLandPumps(landId) });
   const { data: valves } = useQuery({ queryKey: ["land-valves", landId], queryFn: () => getLandValves(landId) });
-  
+
   const { data: recommendations } = useQuery({ queryKey: ["recommendations"], queryFn: getRecommendations });
   const { data: seeds } = useQuery({ queryKey: ["seeds"], queryFn: getSeeds });
 
   // Filter Logic
   const filteredRecommendations = recommendations?.filter((rec: any) => {
-      const matchType = rec.rec_type === type;
-      const matchSeed = selectedSeedFilter ? rec.seed_id === Number(selectedSeedFilter) : true;
-      return matchType && matchSeed;
+    const matchType = rec.rec_type === type;
+    const matchSeed = selectedSeedFilter ? rec.seed_id === Number(selectedSeedFilter) : true;
+    return matchType && matchSeed;
   }) || [];
 
   const getSeedName = (id: number) => seeds?.find((s: any) => s.id === id)?.name || `Seed #${id}`;
@@ -92,11 +73,11 @@ function RouteComponent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !sensorId || !sensorValue || !pumpId || !valveId || !dispenseAmount) { 
-      setError("All fields are mandatory!"); 
-      return; 
+    if (!name || !sensorId || !sensorValue || !pumpId || !valveId || !dispenseAmount) {
+      setError("All fields are mandatory!");
+      return;
     }
-    
+
     mutation.mutate({
       name,
       automation_type: type,
@@ -126,7 +107,7 @@ function RouteComponent() {
 
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-gray-700">Automation Name</label>
-                  <input className="w-full border px-3 py-2 rounded" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Automation name" />
+                  <input className="w-full border px-3 py-2 rounded" value={name} onChange={(e) => setName(e.target.value)} placeholder="Automation name" />
                 </div>
 
                 <div className="space-y-1">

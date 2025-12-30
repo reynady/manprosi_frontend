@@ -4,7 +4,10 @@ export async function fetchJson(url: string, opts?: RequestInit) {
   const headers = new Headers(opts?.headers || {});
 
   if (token) {
+    // console.log(`[safeFetch] Injecting token: ${token.substring(0, 10)}...`);
     headers.set('Authorization', `Bearer ${token}`);
+  } else {
+    console.warn("[safeFetch] No token found in localStorage! Request may fail.");
   }
 
   // If content-type not set, assume JSON if body is present? 
