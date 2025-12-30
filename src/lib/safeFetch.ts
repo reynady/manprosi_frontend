@@ -1,5 +1,21 @@
 export async function fetchJson(url: string, opts?: RequestInit) {
-  const res = await fetch(url, { credentials: 'include', ...opts })
+  // Auto-inject token
+  const token = localStorage.getItem('token');
+  const headers = new Headers(opts?.headers || {});
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  // If content-type not set, assume JSON if body is present? 
+  // Fetch usually doesn't set type automatically if stringified. login.tsx sets it manually. 
+  // Let's just pass headers through.
+
+  const res = await fetch(url, {
+    credentials: 'include',
+    ...opts,
+    headers // Override with our headers object
+  })
   const contentType = res.headers.get('content-type') || ''
 
   const text = await res.text()

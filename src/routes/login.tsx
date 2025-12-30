@@ -25,7 +25,7 @@ async function loginUser(credentials: { username: string; password: string; role
     });
 
     if (!json?.success) throw new Error(json?.error || "Login failed");
-    return json.data;
+    return json; // Return full object to access token
   } catch (error) {
     if (error instanceof TypeError && error.message.includes("fetch")) {
       throw new Error(
@@ -56,8 +56,19 @@ function RouteComponent() {
 
   const mutation = useMutation({
     mutationFn: loginUser,
-    onSuccess: (user) => {
-      // Backend is single source of truth for role. Accept role from server and redirect accordingly.
+    onSuccess: (response: any) => {
+      // Backend now returns { success: true, token: "...", data: { ... } }
+      // safeFetch returns the parsed JSON.
+      // If our loginUser function changed to return json directly, we'd use that.
+      // Let's check loginUser function first.
+
+      const user = response.data || response; // Handle structure
+      const token = response.token;
+
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+
       const role = (user.role || '').toLowerCase();
       setUser(user);
       queryClient.setQueryData(["auth"], user);
@@ -162,8 +173,8 @@ function RouteComponent() {
                       setErrors((prev) => ({ ...prev, role: undefined, server: undefined }));
                     }}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${isSelected
-                        ? `${role.borderColor} ${role.bgColor} border-2`
-                        : "border-gray-200 hover:border-gray-300 bg-white"
+                      ? `${role.borderColor} ${role.bgColor} border-2`
+                      : "border-gray-200 hover:border-gray-300 bg-white"
                       }`}
                   >
                     <div className="flex items-center gap-3">
@@ -216,14 +227,14 @@ function RouteComponent() {
                 }}
                 placeholder="Enter your username"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${errors.username
-                    ? "border-red-300 focus:ring-red-500"
-                    : selectedRole === "admin"
-                      ? "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-                      : selectedRole === "farmer"
-                        ? "border-gray-300 focus:ring-green-500 focus:border-green-500"
-                        : selectedRole === "consultant"
-                          ? "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                          : "border-gray-300 focus:ring-green-500 focus:border-green-500"
+                  ? "border-red-300 focus:ring-red-500"
+                  : selectedRole === "admin"
+                    ? "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+                    : selectedRole === "farmer"
+                      ? "border-gray-300 focus:ring-green-500 focus:border-green-500"
+                      : selectedRole === "consultant"
+                        ? "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        : "border-gray-300 focus:ring-green-500 focus:border-green-500"
                   }`}
               />
               {errors.username && (
@@ -248,14 +259,14 @@ function RouteComponent() {
                 }}
                 placeholder="Enter your password"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${errors.password
-                    ? "border-red-300 focus:ring-red-500"
-                    : selectedRole === "admin"
-                      ? "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-                      : selectedRole === "farmer"
-                        ? "border-gray-300 focus:ring-green-500 focus:border-green-500"
-                        : selectedRole === "consultant"
-                          ? "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                          : "border-gray-300 focus:ring-green-500 focus:border-green-500"
+                  ? "border-red-300 focus:ring-red-500"
+                  : selectedRole === "admin"
+                    ? "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+                    : selectedRole === "farmer"
+                      ? "border-gray-300 focus:ring-green-500 focus:border-green-500"
+                      : selectedRole === "consultant"
+                        ? "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        : "border-gray-300 focus:ring-green-500 focus:border-green-500"
                   }`}
               />
               {errors.password && (
