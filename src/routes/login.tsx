@@ -16,7 +16,7 @@ export const Route = createFileRoute("/login")({
 
 type LoginRole = "admin" | "farmer" | "consultant" | null;
 
-async function loginUser(credentials: { username: string; password: string }) {
+async function loginUser(credentials: { username: string; password: string; role: string | null }) {
   try {
     const json = await fetchJson(`${API_URL}/login`, {
       method: "POST",
@@ -75,6 +75,7 @@ function RouteComponent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: typeof errors = {};
+    if (!selectedRole) newErrors.role = "Please select a role";
     if (!username.trim()) newErrors.username = "Username is required";
     if (!password.trim()) newErrors.password = "Password is required";
     if (Object.keys(newErrors).length > 0) {
@@ -82,7 +83,7 @@ function RouteComponent() {
       return;
     }
 
-    mutation.mutate({ username, password });
+    mutation.mutate({ username, password, role: selectedRole });
   };
 
   const roleOptions = [
@@ -133,9 +134,8 @@ function RouteComponent() {
         <Card className="rounded-2xl shadow-xl p-8 border-green-100">
           {/* Logo/Header */}
           <div className="text-center mb-8">
-            <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${
-              selectedConfig?.color || "from-green-500 to-emerald-600"
-            } rounded-full mb-4 transition-all`}>
+            <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${selectedConfig?.color || "from-green-500 to-emerald-600"
+              } rounded-full mb-4 transition-all`}>
               <Leaf className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -161,22 +161,19 @@ function RouteComponent() {
                       setSelectedRole(role.id);
                       setErrors((prev) => ({ ...prev, role: undefined, server: undefined }));
                     }}
-                    className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      isSelected
+                    className={`p-4 rounded-lg border-2 transition-all text-left ${isSelected
                         ? `${role.borderColor} ${role.bgColor} border-2`
                         : "border-gray-200 hover:border-gray-300 bg-white"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg bg-gradient-to-br ${
-                        isSelected ? role.color : "from-gray-400 to-gray-500"
-                      }`}>
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${isSelected ? role.color : "from-gray-400 to-gray-500"
+                        }`}>
                         <Icon className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <div className={`font-semibold ${
-                          isSelected ? role.textColor : "text-gray-900"
-                        }`}>
+                        <div className={`font-semibold ${isSelected ? role.textColor : "text-gray-900"
+                          }`}>
                           {role.label}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
@@ -218,17 +215,16 @@ function RouteComponent() {
                   setErrors((prev) => ({ ...prev, username: undefined }));
                 }}
                 placeholder="Enter your username"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.username
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${errors.username
                     ? "border-red-300 focus:ring-red-500"
                     : selectedRole === "admin"
-                    ? "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-                    : selectedRole === "farmer"
-                    ? "border-gray-300 focus:ring-green-500 focus:border-green-500"
-                    : selectedRole === "consultant"
-                    ? "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    : "border-gray-300 focus:ring-green-500 focus:border-green-500"
-                }`}
+                      ? "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+                      : selectedRole === "farmer"
+                        ? "border-gray-300 focus:ring-green-500 focus:border-green-500"
+                        : selectedRole === "consultant"
+                          ? "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                          : "border-gray-300 focus:ring-green-500 focus:border-green-500"
+                  }`}
               />
               {errors.username && (
                 <p className="mt-1 text-sm text-red-600">{errors.username}</p>
@@ -251,17 +247,16 @@ function RouteComponent() {
                   setErrors((prev) => ({ ...prev, password: undefined }));
                 }}
                 placeholder="Enter your password"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.password
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${errors.password
                     ? "border-red-300 focus:ring-red-500"
                     : selectedRole === "admin"
-                    ? "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-                    : selectedRole === "farmer"
-                    ? "border-gray-300 focus:ring-green-500 focus:border-green-500"
-                    : selectedRole === "consultant"
-                    ? "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    : "border-gray-300 focus:ring-green-500 focus:border-green-500"
-                }`}
+                      ? "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
+                      : selectedRole === "farmer"
+                        ? "border-gray-300 focus:ring-green-500 focus:border-green-500"
+                        : selectedRole === "consultant"
+                          ? "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                          : "border-gray-300 focus:ring-green-500 focus:border-green-500"
+                  }`}
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
@@ -271,11 +266,9 @@ function RouteComponent() {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className={`w-full bg-gradient-to-r ${
-                selectedConfig?.color || "from-green-500 to-emerald-600"
-              } text-white py-3 px-4 rounded-lg font-semibold ${
-                selectedConfig?.hoverColor || "hover:from-green-600 hover:to-emerald-700"
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md`}
+              className={`w-full bg-gradient-to-r ${selectedConfig?.color || "from-green-500 to-emerald-600"
+                } text-white py-3 px-4 rounded-lg font-semibold ${selectedConfig?.hoverColor || "hover:from-green-600 hover:to-emerald-700"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md`}
             >
               {mutation.isPending ? (
                 <>
