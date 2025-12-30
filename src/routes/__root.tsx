@@ -10,7 +10,7 @@ interface RouterContext {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ context, location }) => {
-    const { queryClient } = context; 
+    const { queryClient } = context;
     const path = location.pathname;
 
     const roleBasePaths: Record<string, string> = {
@@ -24,8 +24,15 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         queryOptions({
           queryKey: ["auth"],
           queryFn: async () => {
-            const json = await fetchJson(`${API_URL}/me`)
-            return json?.data ?? null
+            const token = localStorage.getItem('token');
+            if (!token) return null; // No token = Not logged in
+
+            try {
+              const json = await fetchJson(`${API_URL}/me`)
+              return json?.data ?? null
+            } catch (err) {
+              return null; // Invalid token
+            }
           },
         }),
       );
