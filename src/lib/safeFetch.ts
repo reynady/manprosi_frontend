@@ -1,48 +1,48 @@
 export async function fetchJson(url: string, opts?: RequestInit) {
-  // Auto-inject token
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   const headers = new Headers(opts?.headers || {});
 
+  // ✅ Inject token
   if (token) {
-    // console.log(`[safeFetch] Injecting token: ${token.substring(0, 10)}...`);
-    headers.set('Authorization', `Bearer ${token}`);
-  } else {
-    console.warn("[safeFetch] No token found in localStorage! Request may fail.");
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
-  // If content-type not set, assume JSON if body is present? 
-  // Fetch usually doesn't set type automatically if stringified. login.tsx sets it manually. 
-  // Let's just pass headers through.
+  // ✅ AUTO set JSON header if body exists & not FormData
+  if (
+    opts?.body &&
+    !(opts.body instanceof FormData) &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
+  }
 
   const res = await fetch(url, {
-    credentials: 'include',
+    credentials: "include",
     ...opts,
-    headers // Override with our headers object
-  })
-  const contentType = res.headers.get('content-type') || ''
+    headers,
+  });
 
-  const text = await res.text()
+  const contentType = res.headers.get("content-type") || "";
+  const text = await res.text();
 
-  if (!contentType.includes('application/json')) {
-    // Backend returned HTML or plain text — include preview for debugging
-    const preview = text.slice(0, 300)
-    throw new Error(`Non-JSON response (status ${res.status}): ${preview}`)
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      `Non-JSON response (status ${res.status}): ${text.slice(0, 200)}`
+    );
   }
 
-  let json: any
+  let json: any;
   try {
-    json = JSON.parse(text)
-  } catch (err) {
-    throw new Error(`Invalid JSON response (status ${res.status})`)
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`Invalid JSON response (status ${res.status})`);
   }
 
   if (!res.ok) {
-    // If API uses { error } shape, surface it, otherwise generic
-    const msg = json?.error ?? `HTTP ${res.status}`
-    throw new Error(msg)
+    throw new Error(json?.error || json?.message || `HTTP ${res.status}`);
   }
 
-  return json
+  return json;
 }
 
-export default fetchJson
+export default fetchJson;

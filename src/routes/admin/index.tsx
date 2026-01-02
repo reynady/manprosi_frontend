@@ -9,7 +9,7 @@ import NotificationCenter from '@/components/NotificationCenter'
 import fetchJson from '@/lib/safeFetch'
 
 export const Route = createFileRoute('/admin/')({
-  component: RouteComponent,
+    component: RouteComponent,
 })
 
 async function getUsers() {
@@ -23,22 +23,26 @@ async function deleteUser(id: number) {
 }
 
 async function logoutUser() {
-        const json = await fetchJson(`${API_URL}/logout`, { method: 'POST' })
-        return json ?? true
+    const json = await fetchJson(`${API_URL}/logout`, { method: 'POST' })
+    return json ?? true
 }
 
 function getRoleName(roleId: number): string {
-  switch (roleId) {
-    case 1: return "Admin";
-    case 2: return "Farmer";
-    case 3: return "Consultant";
-    default: return "Unknown";
-  }
+    switch (roleId) {
+        case 1:
+            return "Admin";
+        case 2:
+            return "Consultant";
+        case 3:
+            return "Farmer";
+        default:
+            return "Unknown";
+    }
 }
 
 function RouteComponent() {
     const [activeTab, setActiveTab] = useState('users');
-    
+
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const user = useAuthStore((s) => s.user);
@@ -58,10 +62,10 @@ function RouteComponent() {
     const deleteMutation = useMutation({
         mutationFn: deleteUser,
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["users"] });
+            queryClient.invalidateQueries({ queryKey: ["users"] });
         },
         onError: (err: Error) => {
-          alert(err.message);
+            alert(err.message);
         },
     });
 
@@ -69,7 +73,7 @@ function RouteComponent() {
         mutationFn: logoutUser,
         onSuccess: async () => {
             await useAuthStore.getState().clearUser();
-            queryClient.removeQueries(); 
+            queryClient.removeQueries();
             navigate({ to: "/login" });
         },
         onError: (err: Error) => {
@@ -133,7 +137,7 @@ function RouteComponent() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <button 
+                                                    <button
                                                         onClick={() => navigate({ to: `/admin/update-user/${u.id}` })}
                                                         className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                                                         title="Edit User"
@@ -141,7 +145,7 @@ function RouteComponent() {
                                                         <Pencil size={18} />
                                                     </button>
                                                     <button
-                                                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" 
+                                                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                                                         onClick={() => {
                                                             if (confirm(`Are you sure you want to delete ${u.username}?`)) {
                                                                 deleteMutation.mutate(u.id);
@@ -202,7 +206,7 @@ function RouteComponent() {
                         </div>
                     </div>
                 );
-            
+
             case 'profile':
                 return (
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-2xl">
@@ -238,46 +242,45 @@ function RouteComponent() {
         }
     };
 
-        return (
-            <div className="min-h-screen bg-gray-50">
-                <Header />
-                <NotificationCenter />
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <Header />
+            <NotificationCenter />
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                            <p className="text-sm text-gray-600 mt-1">Manage users and system settings</p>
-                        </div>
-
-                        {activeTab === 'users' && (
-                            <button
-                                onClick={() => navigate({ to: '/admin/create-user' })}
-                                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all font-medium shadow-sm"
-                            >
-                                + Create User
-                            </button>
-                        )}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                        <p className="text-sm text-gray-600 mt-1">Manage users and system settings</p>
                     </div>
 
-                    <nav aria-label="Tabs" className="flex space-x-1 border-b border-gray-200 mb-6">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                                    activeTab === tab.id
-                                        ? 'text-green-600 border-b-2 border-green-600'
-                                        : 'text-gray-600 hover:text-gray-900 hover:border-b-2 hover:border-gray-300'
-                                }`}
-                            >
-                                {tab.label.charAt(0).toUpperCase() + tab.label.slice(1)}
-                            </button>
-                        ))}
-                    </nav>
-
-                    {renderTabContent()}
+                    {activeTab === 'users' && (
+                        <button
+                            onClick={() => navigate({ to: '/admin/create-user' })}
+                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all font-medium shadow-sm"
+                        >
+                            + Create User
+                        </button>
+                    )}
                 </div>
+
+                <nav aria-label="Tabs" className="flex space-x-1 border-b border-gray-200 mb-6">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
+                                ? 'text-green-600 border-b-2 border-green-600'
+                                : 'text-gray-600 hover:text-gray-900 hover:border-b-2 hover:border-gray-300'
+                                }`}
+                        >
+                            {tab.label.charAt(0).toUpperCase() + tab.label.slice(1)}
+                        </button>
+                    ))}
+                </nav>
+
+                {renderTabContent()}
             </div>
-        )
+        </div>
+    )
 }
